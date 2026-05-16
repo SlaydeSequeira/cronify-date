@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "node tests/index.test.js",
+    "build:tests": "tsc -p tsconfig.test.json",
+    "test": "tsc -p tsconfig.test.json && node dist-tests/tests/run.js",
     "prepublishOnly": "npm run build"
   },
   "repository": {
