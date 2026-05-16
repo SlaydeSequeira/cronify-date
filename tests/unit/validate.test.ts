@@ -19,6 +19,10 @@ test('valid cron with step', () => {
   eq(cronify.isValid('*/15 */2 * * *'), true);
 });
 
+test('valid cron with stepped range', () => {
+  eq(cronify.isValid('0 9-17/2 * * *'), true);
+});
+
 test('invalid - too few fields', () => {
   eq(cronify.isValid('* * *'), false);
 });
@@ -47,6 +51,53 @@ test('invalid - day of week out of range', () => {
   eq(cronify.isValid('0 0 * * 8'), false);
 });
 
+// ── @ macro aliases (#7) ────────────────────────────────────
+
+console.log('\n@ macro validation');
+
+test('@yearly is valid', () => {
+  eq(cronify.isValid('@yearly'), true);
+});
+
+test('@annually is valid', () => {
+  eq(cronify.isValid('@annually'), true);
+});
+
+test('@monthly is valid', () => {
+  eq(cronify.isValid('@monthly'), true);
+});
+
+test('@weekly is valid', () => {
+  eq(cronify.isValid('@weekly'), true);
+});
+
+test('@daily is valid', () => {
+  eq(cronify.isValid('@daily'), true);
+});
+
+test('@midnight is valid', () => {
+  eq(cronify.isValid('@midnight'), true);
+});
+
+test('@hourly is valid', () => {
+  eq(cronify.isValid('@hourly'), true);
+});
+
+test('@reboot throws descriptive error', () => {
+  try { cronify.validate('@reboot'); eq(true, false); }
+  catch (e: any) { eq(e.message.includes('system-level directive'), true); }
+});
+
+test('@reboot is not valid via isValid()', () => {
+  eq(cronify.isValid('@reboot'), false);
+});
+
+test('@unknown is not valid', () => {
+  eq(cronify.isValid('@unknown'), false);
+});
+
+// ── validate() ──────────────────────────────────────────────
+
 console.log('\nvalidate()');
 
 test('validate throws descriptive error for minute', () => {
@@ -71,6 +122,12 @@ test('validate throws on bad range', () => {
 
 test('validate does not throw on valid cron', () => {
   cronify.validate('*/5 9-17 1,15 1-6 1-5');
+});
+
+test('validate does not throw on @ macros', () => {
+  cronify.validate('@daily');
+  cronify.validate('@hourly');
+  cronify.validate('@yearly');
 });
 
 summary();

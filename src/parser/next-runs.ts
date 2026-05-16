@@ -1,8 +1,10 @@
 import { validate } from './validate.js';
+import { expandMacro } from '../utils/constants.js';
 
 export const nextRuns = (cron: string, count: number = 5, from: Date = new Date()): Date[] => {
   validate(cron);
-  const parts = cron.trim().split(/\s+/);
+  const expanded = expandMacro(cron);
+  const parts = expanded.trim().split(/\s+/);
   const matcher = buildMatcher(parts);
   const results: Date[] = [];
   const current = new Date(from);

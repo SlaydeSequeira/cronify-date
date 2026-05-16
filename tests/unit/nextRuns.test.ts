@@ -49,6 +49,40 @@ test('results are in chronological order', () => {
   }
 });
 
+test('respects stepped range', () => {
+  const runs = cronify.nextRuns('0 9-17/2 * * *', 5, from);
+  const validHours = [9, 11, 13, 15, 17];
+  for (const r of runs) {
+    eq(validHours.includes(r.getHours()), true);
+    eq(r.getMinutes(), 0);
+  }
+});
+
+// ── @ macros (#7) ───────────────────────────────────────────
+
+console.log('\nnextRuns() @ macros');
+
+test('@daily returns midnight runs', () => {
+  const runs = cronify.nextRuns('@daily', 3, from);
+  eq(runs.length, 3);
+  for (const r of runs) {
+    eq(r.getHours(), 0);
+    eq(r.getMinutes(), 0);
+  }
+});
+
+test('@hourly returns on-the-hour runs', () => {
+  const runs = cronify.nextRuns('@hourly', 3, from);
+  for (const r of runs) {
+    eq(r.getMinutes(), 0);
+  }
+});
+
+test('@reboot throws', () => {
+  try { cronify.nextRuns('@reboot', 1); eq(true, false); }
+  catch (e: any) { eq(e.message.includes('system-level directive'), true); }
+});
+
 test('throws on invalid cron', () => {
   try { cronify.nextRuns('60 * * * *'); eq(true, false); }
   catch (e: any) { eq(e.message.includes('minute'), true); }

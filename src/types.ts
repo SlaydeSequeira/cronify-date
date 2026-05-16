@@ -19,9 +19,9 @@ export type CronChain = {
 };
 
 export type RangeChain = {
-  readonly hours: () => CronChain;
-  readonly minutes: () => CronChain;
-  readonly daysOfMonth: () => CronChain;
-  readonly months: () => CronChain;
-  readonly daysOfWeek: () => CronChain;
+  readonly hours: (step?: number) => CronChain;
+  readonly minutes: (step?: number) => CronChain;
+  readonly daysOfMonth: (step?: number) => CronChain;
+  readonly months: (step?: number) => CronChain;
+  readonly daysOfWeek: (step?: number) => CronChain;
 };

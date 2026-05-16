@@ -1,3 +1,5 @@
+import { expandMacro, CRON_MACROS } from '../utils/constants.js';
+
 export const isValid = (cron: string): boolean => {
   try {
     validate(cron);
@@ -8,7 +10,8 @@ export const isValid = (cron: string): boolean => {
 };
 
 export const validate = (cron: string): void => {
-  const parts = cron.trim().split(/\s+/);
+  const expanded = expandMacro(cron);
+  const parts = expanded.trim().split(/\s+/);
   if (parts.length !== 5) throw new Error(`Expected 5 fields, got ${parts.length}.`);
   validateField(parts[0], 0, 59, 'minute');
   validateField(parts[1], 0, 23, 'hour');

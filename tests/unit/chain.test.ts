@@ -28,8 +28,13 @@ test('template literal usage', () => {
   eq(`${cronify.every('5m')}`, '*/5 * * * *');
 });
 
-test('betweenTimes sets hour range', () => {
+test('betweenTimes with zero-minute times', () => {
   eq(cronify.at('0:00').betweenTimes('9:00', '17:00').toCron(), '0 9-17 * * *');
+});
+
+test('betweenTimes throws on non-zero minutes', () => {
+  try { cronify.at('0:00').betweenTimes('9:30', '17:30'); eq(true, false); }
+  catch (e: any) { eq(e.message.includes('hour-level ranges'), true); }
 });
 
 test('immutability - chaining does not mutate', () => {
@@ -38,6 +43,13 @@ test('immutability - chaining does not mutate', () => {
   const b = base.at('17:00');
   eq(a.toCron(), '0 9 * * *');
   eq(b.toCron(), '0 17 * * *');
+});
+
+test('complex: stepped hours on weekdays in Q1', () => {
+  eq(
+    cronify.between(9, 17).hours(2).at('0:00').on('weekdays').inMonth(1, 2, 3).toCron(),
+    '0 9-17/2 * 1,2,3 1-5'
+  );
 });
 
 summary();

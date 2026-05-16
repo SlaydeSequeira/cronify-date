@@ -31,3 +31,19 @@ export const DAY_GROUPS: Record<string, number[]> = {
 export const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+export const CRON_MACROS: Record<string, string> = {
+  '@yearly': '0 0 1 1 *',
+  '@annually': '0 0 1 1 *',
+  '@monthly': '0 0 1 * *',
+  '@weekly': '0 0 * * 0',
+  '@daily': '0 0 * * *',
+  '@midnight': '0 0 * * *',
+  '@hourly': '0 * * * *',
+};
+
+export const expandMacro = (cron: string): string => {
+  const lower = cron.trim().toLowerCase();
+  if (lower === '@reboot') throw new Error('"@reboot" is a system-level directive with no fixed schedule and cannot be expanded to a 5-field cron expression.');
+  return CRON_MACROS[lower] ?? cron;
+};

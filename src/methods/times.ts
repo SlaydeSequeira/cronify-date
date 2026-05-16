@@ -13,16 +13,21 @@ export const applyTimes = (state: CronState, ...timeList: string[]): CronState =
     hours.push(Number(parsed.hour));
   }
 
-  const allSameMinute = minutes.every(m => m === minutes[0]);
-  const allSameHour = hours.every(h => h === hours[0]);
+  const uniqueMinutes = unique(minutes);
+  const uniqueHours = unique(hours);
 
-  if (allSameMinute) {
-    return { ...state, minute: String(minutes[0]), hour: unique(hours).join(',') };
+  if (uniqueMinutes.length > 1 && uniqueHours.length > 1) {
+    throw new Error(
+      `Cannot express times [${timeList.join(', ')}] in a single cron expression. ` +
+      `When both hours and minutes differ, cron produces a cross-product ` +
+      `(${uniqueHours.length * uniqueMinutes.length} runs instead of ${timeList.length}). ` +
+      `Use separate cron expressions for each time instead.`
+    );
   }
 
-  if (allSameHour) {
-    return { ...state, hour: String(hours[0]), minute: unique(minutes).join(',') };
+  if (uniqueMinutes.length === 1) {
+    return { ...state, minute: String(uniqueMinutes[0]), hour: uniqueHours.join(',') };
   }
 
-  return { ...state, minute: unique(minutes).join(','), hour: unique(hours).join(',') };
+  return { ...state, hour: String(uniqueHours[0]), minute: uniqueMinutes.join(',') };
 };

@@ -83,6 +83,34 @@ test('every annually alias', () => {
   eq(cronify.every('annually').toCron(), '0 0 1 1 *');
 });
 
+// ── month/week intervals (#3) ───────────────────────────────
+
+console.log('\nevery() month/week intervals');
+
+test('every 3 months (quarterly)', () => {
+  eq(cronify.every('3M').toCron(), '0 0 1 */3 *');
+});
+
+test('every 3 months via numeric', () => {
+  eq(cronify.every(3, 'months').toCron(), '0 0 1 */3 *');
+});
+
+test('every 6 months (biannual)', () => {
+  eq(cronify.every(6, 'months').toCron(), '0 0 1 */6 *');
+});
+
+test('every 2 weeks (day-of-week step)', () => {
+  eq(cronify.every('2w').toCron(), '0 0 * * */2');
+});
+
+test('every 2 weeks via numeric', () => {
+  eq(cronify.every(2, 'weeks').toCron(), '0 0 * * */2');
+});
+
+// ── error handling ──────────────────────────────────────────
+
+console.log('\nevery() errors');
+
 test('throws on invalid interval string', () => {
   try { cronify.every('banana'); eq(true, false); }
   catch (e: any) { eq(e.message.includes('Cannot parse'), true); }
@@ -101,6 +129,16 @@ test('throws on hour interval out of range', () => {
 test('throws on day interval out of range', () => {
   try { cronify.every('32d'); eq(true, false); }
   catch (e: any) { eq(e.message.includes('Day interval must be 1-31'), true); }
+});
+
+test('throws on month interval out of range', () => {
+  try { cronify.every(13, 'months'); eq(true, false); }
+  catch (e: any) { eq(e.message.includes('Month interval must be 1-12'), true); }
+});
+
+test('throws on week interval out of range', () => {
+  try { cronify.every(7, 'weeks'); eq(true, false); }
+  catch (e: any) { eq(e.message.includes('Week interval must be 1-6'), true); }
 });
 
 summary();
