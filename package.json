@@ -1,0 +1,39 @@
+{
+  "name": "cronify-date",
+  "version": "1.0.0",
+  "description": "Convert human-readable time expressions to cron syntax with a fluent, chainable API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "node tests/index.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SlaydeSequeira/cronify-date.git"
+  },
+  "keywords": [
+    "cron",
+    "crontab",
+    "schedule",
+    "scheduler",
+    "cron-expression",
+    "cron-parser",
+    "cron-builder",
+    "human-readable"
+  ],
+  "author": "SlaydeSequeira",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SlaydeSequeira/cronify-date/issues"
+  },
+  "homepage": "https://github.com/SlaydeSequeira/cronify-date#readme",
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "typescript": "^6.0.3"
+  }
+}
