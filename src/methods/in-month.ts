@@ -1,21 +1,21 @@
 import type { CronState } from '../types.js';
 import { MONTHS } from '../utils/constants.js';
 import { unique } from '../utils/helpers.js';
+import { Month } from '../constants/index.js';
 
-// Accepts month names ("jan", "march") or numbers (1-12), sets the month field
 export const applyInMonth = (state: CronState, ...months: (string | number)[]): CronState => {
   const nums: number[] = [];
 
   for (const m of months) {
     if (typeof m === 'number') {
-      if (m < 1 || m > 12) throw new Error(`Month must be 1-12, got ${m}`);
+      if (m < Month.Min || m > Month.Max) throw new Error(`Month must be ${Month.Min}-${Month.Max}, got ${m}`);
       nums.push(m);
     } else {
       const lower = m.toLowerCase();
       if (lower in MONTHS) {
         nums.push(MONTHS[lower]);
       } else {
-        throw new Error(`Unknown month: "${m}". Use month names (jan-dec) or numbers (1-12).`);
+        throw new Error(`Unknown month: "${m}". Use month names (jan-dec) or numbers (${Month.Min}-${Month.Max}).`);
       }
     }
   }

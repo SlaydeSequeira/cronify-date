@@ -1,5 +1,6 @@
 import type { CronState, CronChain, RangeChain } from './types.js';
 import { toCron, parseTime, validateTimezone } from './utils/helpers.js';
+import { Minute, Cron } from './constants/index.js';
 import { applyAt } from './methods/at.js';
 import { applyOn } from './methods/on.js';
 import { applyInMonth } from './methods/in-month.js';
@@ -27,7 +28,7 @@ export const createChain = (state: CronState): CronChain => ({
   betweenTimes: (start, end) => {
     const s = parseTime(start);
     const e = parseTime(end);
-    if (s.minute !== '0' || e.minute !== '0') {
+    if (s.minute !== Minute.Zero || e.minute !== Minute.Zero) {
       throw new Error(
         'betweenTimes() only supports hour-level ranges (e.g. "9:00", "17:00"). ' +
         'Minute-precision time ranges cannot be expressed in a single cron expression.'
@@ -59,7 +60,7 @@ export const createChain = (state: CronState): CronChain => ({
   // Convenience: compute next run dates directly from the chain
   nextRuns: (count?, from?) => {
     const opts = state.timezone ? { from, timezone: state.timezone } : { from };
-    return nextRuns(toCron(state), count ?? 5, opts);
+    return nextRuns(toCron(state), count ?? Cron.DefaultNextRunCount, opts);
   },
 
   toString: () => toCron(state),

@@ -1,6 +1,6 @@
-import { expandMacro, CRON_MACROS } from '../utils/constants.js';
+import { expandMacro } from '../utils/constants.js';
+import { Minute, Hour, DayOfMonth, Month, DayOfWeek, Cron } from '../constants/index.js';
 
-// Returns true if the expression is a valid 5-field cron or known @ macro
 export const isValid = (cron: string): boolean => {
   try {
     validate(cron);
@@ -10,28 +10,26 @@ export const isValid = (cron: string): boolean => {
   }
 };
 
-// Throws a descriptive error if the cron expression is invalid
 export const validate = (cron: string): void => {
   const expanded = expandMacro(cron);
   const parts = expanded.trim().split(/\s+/);
-  if (parts.length !== 5) throw new Error(`Expected 5 fields, got ${parts.length}.`);
-  validateField(parts[0], 0, 59, 'minute');
-  validateField(parts[1], 0, 23, 'hour');
-  validateField(parts[2], 1, 31, 'day of month');
-  validateField(parts[3], 1, 12, 'month');
-  validateField(parts[4], 0, 7, 'day of week');
+  if (parts.length !== Cron.FieldCount) throw new Error(`Expected ${Cron.FieldCount} fields, got ${parts.length}.`);
+  validateField(parts[0], Minute.Min, Minute.Max, 'minute');
+  validateField(parts[1], Hour.Min, Hour.Max, 'hour');
+  validateField(parts[2], DayOfMonth.Min, DayOfMonth.Max, 'day of month');
+  validateField(parts[3], Month.Min, Month.Max, 'month');
+  validateField(parts[4], DayOfWeek.Min, DayOfWeek.MaxWithSundayAlt, 'day of week');
 };
 
-// Validates a single cron field — handles lists (,), ranges (-), and steps (/)
 const validateField = (value: string, min: number, max: number, name: string): void => {
-  if (value === '*') return;
+  if (value === Cron.Wildcard) return;
 
   for (const part of value.split(',')) {
     if (part.includes('/')) {
       const [range, step] = part.split('/');
-      if (range !== '*') validateRange(range, min, max, name);
+      if (range !== Cron.Wildcard) validateRange(range, min, max, name);
       const s = Number(step);
-      if (isNaN(s) || s < 1) throw new Error(`Invalid step "${step}" in ${name}.`);
+      if (isNaN(s) || s < Cron.MinStep) throw new Error(`Invalid step "${step}" in ${name}.`);
     } else if (part.includes('-')) {
       validateRange(part, min, max, name);
     } else {

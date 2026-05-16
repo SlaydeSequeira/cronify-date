@@ -1,17 +1,16 @@
 import type { CronState } from '../types.js';
 import { WEEKDAYS, DAY_GROUPS } from '../utils/constants.js';
 import { unique } from '../utils/helpers.js';
+import { DayOfMonth, Cron } from '../constants/index.js';
 
-// Accepts weekday names ("mon", "weekdays"), or day-of-month numbers (1-31).
-// Mixing both types in one call throws — cron uses separate fields for each.
 export const applyOn = (state: CronState, ...days: (string | number)[]): CronState => {
-  const nums: number[] = [];       // day-of-month values
-  const weekDays: number[] = [];   // day-of-week values
+  const nums: number[] = [];
+  const weekDays: number[] = [];
   let usedGroup = false;
 
   for (const day of days) {
     if (typeof day === 'number') {
-      if (day < 1 || day > 31) throw new Error(`Day of month must be 1-31, got ${day}`);
+      if (day < DayOfMonth.Min || day > DayOfMonth.Max) throw new Error(`Day of month must be ${DayOfMonth.Min}-${DayOfMonth.Max}, got ${day}`);
       nums.push(day);
     } else {
       const lower = day.toLowerCase();
@@ -21,7 +20,7 @@ export const applyOn = (state: CronState, ...days: (string | number)[]): CronSta
       } else if (lower in WEEKDAYS) {
         weekDays.push(WEEKDAYS[lower]);
       } else {
-        throw new Error(`Unknown day: "${day}". Use day names (mon-sun), numbers (1-31), "weekdays", or "weekends".`);
+        throw new Error(`Unknown day: "${day}". Use day names (mon-sun), numbers (${DayOfMonth.Min}-${DayOfMonth.Max}), "weekdays", or "weekends".`);
       }
     }
   }
@@ -40,8 +39,7 @@ export const applyOn = (state: CronState, ...days: (string | number)[]): CronSta
     const sorted = unique(weekDays);
     let dayOfWeek: string;
 
-    // Collapse contiguous groups like "weekdays" into a range (1-5) instead of a list
-    if (usedGroup && sorted.length > 2) {
+    if (usedGroup && sorted.length > Cron.MinContiguousForRange) {
       const isContiguous = sorted.every((v, i) => i === 0 || v === sorted[i - 1] + 1);
       dayOfWeek = isContiguous ? `${sorted[0]}-${sorted[sorted.length - 1]}` : sorted.join(',');
     } else {

@@ -1,35 +1,32 @@
 import type { CronState } from '../types.js';
+import { Minute, Hour, DayOfMonth, Month, DayOfWeek, Cron } from '../constants/index.js';
 
-// All wildcards — the starting point before any method narrows a field
 export const DEFAULT_STATE: CronState = {
-  minute: '*',
-  hour: '*',
-  dayOfMonth: '*',
-  month: '*',
-  dayOfWeek: '*',
+  minute: Minute.Wildcard,
+  hour: Hour.Wildcard,
+  dayOfMonth: DayOfMonth.Wildcard,
+  month: Month.Wildcard,
+  dayOfWeek: DayOfWeek.Wildcard,
 };
 
-// Joins the 5 fields into a cron string: "min hour dom month dow"
 export const toCron = (state: CronState): string =>
   `${state.minute} ${state.hour} ${state.dayOfMonth} ${state.month} ${state.dayOfWeek}`;
 
 export const unique = (arr: number[]): number[] =>
   [...new Set(arr)].sort((a, b) => a - b);
 
-// Parses "HH:MM" into separate hour/minute strings, validates ranges
 export const parseTime = (time: string): { hour: string; minute: string } => {
   const match = time.match(/^(\d{1,2}):(\d{2})$/);
   if (!match) throw new Error(`Invalid time format: "${time}". Use HH:MM (e.g. "5:07", "14:30").`);
   const hour = Number(match[1]);
   const minute = Number(match[2]);
-  if (hour > 23) throw new Error(`Hour must be 0-23, got ${hour}.`);
-  if (minute > 59) throw new Error(`Minute must be 0-59, got ${minute}.`);
+  if (hour > Hour.Max) throw new Error(`Hour must be ${Hour.Min}-${Hour.Max}, got ${hour}.`);
+  if (minute > Minute.Max) throw new Error(`Minute must be ${Minute.Min}-${Minute.Max}, got ${minute}.`);
   return { hour: String(hour), minute: String(minute) };
 };
 
-// Expands a cron field expression (*, */n, n-m, n-m/s, n,m) into concrete values
 export const expandFieldValues = (expr: string, min: number, max: number): number[] => {
-  if (expr === '*') {
+  if (expr === Cron.Wildcard) {
     return Array.from({ length: max - min + 1 }, (_, i) => i + min);
   }
 
@@ -39,7 +36,7 @@ export const expandFieldValues = (expr: string, min: number, max: number): numbe
       const [range, stepStr] = part.split('/');
       const step = Number(stepStr);
       let start = min, end = max;
-      if (range !== '*') {
+      if (range !== Cron.Wildcard) {
         if (range.includes('-')) {
           [start, end] = range.split('-').map(Number);
         } else {
@@ -58,7 +55,6 @@ export const expandFieldValues = (expr: string, min: number, max: number): numbe
   return unique(result);
 };
 
-// Validates a timezone string using the Intl API
 export const validateTimezone = (tz: string): void => {
   try {
     new Intl.DateTimeFormat('en-US', { timeZone: tz });

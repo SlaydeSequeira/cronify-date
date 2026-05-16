@@ -1,0 +1,17 @@
+export const DayOfWeek = {
+  Min: 0,
+  Max: 6,
+  MaxWithSundayAlt: 7,
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+  SundayStr: '0',
+  WeekdayRange: '1-5',
+  WeekendList: '0,6',
+  TotalDays: 7,
+  Wildcard: '*',
+} as const;

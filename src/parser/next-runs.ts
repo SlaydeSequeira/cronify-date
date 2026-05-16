@@ -2,12 +2,11 @@ import type { NextRunsOptions } from '../types.js';
 import { validate } from './validate.js';
 import { expandMacro } from '../utils/constants.js';
 import { expandFieldValues } from '../utils/helpers.js';
+import { Minute, Hour, DayOfMonth, Month, DayOfWeek, Cron } from '../constants/index.js';
 
-// Brute-force scans forward minute-by-minute to find the next N matching dates.
-// 3rd argument is backward-compatible: accepts Date (legacy) or options object.
 export const nextRuns = (
   cron: string,
-  count: number = 5,
+  count: number = Cron.DefaultNextRunCount,
   fromOrOptions?: Date | NextRunsOptions,
 ): Date[] => {
   validate(cron);
@@ -32,8 +31,7 @@ export const nextRuns = (
   current.setSeconds(0, 0);
   current.setMinutes(current.getMinutes() + 1);
 
-  const maxIterations = 525600; // 1 year of minutes
-  for (let i = 0; i < maxIterations && results.length < count; i++) {
+  for (let i = 0; i < Cron.MaxIterations && results.length < count; i++) {
     const dateParts = timezone ? getPartsInTz(current, timezone) : getLocalParts(current);
     if (matcher(dateParts)) {
       results.push(new Date(current));
@@ -44,10 +42,9 @@ export const nextRuns = (
   return results;
 };
 
-// Merges runs from multiple cron expressions, sorted chronologically
 export const nextRunsUnion = (
   crons: string[],
-  count: number = 5,
+  count: number = Cron.DefaultNextRunCount,
   fromOrOptions?: Date | NextRunsOptions,
 ): Date[] => {
   const allRuns: Date[] = [];
@@ -81,7 +78,6 @@ const getLocalParts = (d: Date): DateParts => ({
   dow: d.getDay(),
 });
 
-// Extracts date components in a specific timezone using the Intl API
 const getPartsInTz = (d: Date, tz: string): DateParts => {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: tz,
@@ -100,32 +96,38 @@ const getPartsInTz = (d: Date, tz: string): DateParts => {
 
   const hour = get('hour');
 
-  // Day of week via a separate formatter since formatToParts doesn't include numeric weekday
   const dowStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(d);
-  const dowMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const dowMap: Record<string, number> = {
+    Sun: DayOfWeek.Sunday,
+    Mon: DayOfWeek.Monday,
+    Tue: DayOfWeek.Tuesday,
+    Wed: DayOfWeek.Wednesday,
+    Thu: DayOfWeek.Thursday,
+    Fri: DayOfWeek.Friday,
+    Sat: DayOfWeek.Saturday,
+  };
 
   return {
     minute: get('minute'),
-    hour: hour === 24 ? 0 : hour, // midnight edge case in some locales
+    hour: hour === Cron.MidnightHour ? 0 : hour,
     day: get('day'),
     month: get('month'),
-    dow: dowMap[dowStr] ?? 0,
+    dow: dowMap[dowStr] ?? DayOfWeek.Sunday,
   };
 };
 
-// Pre-computes Sets for each field so matching is O(1) per field per minute
 const buildMatcher = (parts: string[]): (d: DateParts) => boolean => {
   const [minExpr, hourExpr, domExpr, monthExpr, dowExpr] = parts;
-  const minSet = new Set(expandFieldValues(minExpr, 0, 59));
-  const hourSet = new Set(expandFieldValues(hourExpr, 0, 23));
-  const domSet = new Set(expandFieldValues(domExpr, 1, 31));
-  const monthSet = new Set(expandFieldValues(monthExpr, 1, 12));
-  const dowSet = new Set(expandFieldValues(dowExpr, 0, 7));
+  const minSet = new Set(expandFieldValues(minExpr, Minute.Min, Minute.Max));
+  const hourSet = new Set(expandFieldValues(hourExpr, Hour.Min, Hour.Max));
+  const domSet = new Set(expandFieldValues(domExpr, DayOfMonth.Min, DayOfMonth.Max));
+  const monthSet = new Set(expandFieldValues(monthExpr, Month.Min, Month.Max));
+  const dowSet = new Set(expandFieldValues(dowExpr, DayOfWeek.Min, DayOfWeek.MaxWithSundayAlt));
 
   return (d: DateParts) =>
     minSet.has(d.minute)
     && hourSet.has(d.hour)
     && domSet.has(d.day)
     && monthSet.has(d.month)
-    && (dowSet.has(d.dow) || dowSet.has(d.dow + 7)); // 0 and 7 both mean Sunday
+    && (dowSet.has(d.dow) || dowSet.has(d.dow + DayOfWeek.TotalDays));
 };
