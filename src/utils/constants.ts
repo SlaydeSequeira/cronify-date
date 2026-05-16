@@ -1,3 +1,4 @@
+// Maps day names/abbreviations to cron day-of-week values (0=Sun, 6=Sat)
 export const WEEKDAYS: Record<string, number> = {
   sunday: 0, sun: 0,
   monday: 1, mon: 1,
@@ -8,6 +9,7 @@ export const WEEKDAYS: Record<string, number> = {
   saturday: 6, sat: 6,
 };
 
+// Maps month names/abbreviations to cron month values (1=Jan, 12=Dec)
 export const MONTHS: Record<string, number> = {
   january: 1, jan: 1,
   february: 2, feb: 2,
@@ -23,15 +25,19 @@ export const MONTHS: Record<string, number> = {
   december: 12, dec: 12,
 };
 
+// Shorthand groups that expand to multiple day-of-week values
 export const DAY_GROUPS: Record<string, number[]> = {
   weekdays: [1, 2, 3, 4, 5],
   weekends: [0, 6],
 };
 
+// Display names for describe() output — indexed by cron day-of-week (0=Sun)
 export const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// Display names for describe() output — index 0 is empty so month 1 = 'January'
 export const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+// Standard cron @ macros expanded to their 5-field equivalents
 export const CRON_MACROS: Record<string, string> = {
   '@yearly': '0 0 1 1 *',
   '@annually': '0 0 1 1 *',
@@ -42,6 +48,7 @@ export const CRON_MACROS: Record<string, string> = {
   '@hourly': '0 * * * *',
 };
 
+// Replaces @ macros with 5-field equivalents; @reboot has no schedule so it throws
 export const expandMacro = (cron: string): string => {
   const lower = cron.trim().toLowerCase();
   if (lower === '@reboot') throw new Error('"@reboot" is a system-level directive with no fixed schedule and cannot be expanded to a 5-field cron expression.');

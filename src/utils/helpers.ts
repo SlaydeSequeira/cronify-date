@@ -1,5 +1,6 @@
 import type { CronState } from '../types.js';
 
+// All wildcards — the starting point before any method narrows a field
 export const DEFAULT_STATE: CronState = {
   minute: '*',
   hour: '*',
@@ -8,6 +9,7 @@ export const DEFAULT_STATE: CronState = {
   dayOfWeek: '*',
 };
 
+// Joins the 5 fields into a cron string: "min hour dom month dow"
 export const toCron = (state: CronState): string =>
   `${state.minute} ${state.hour} ${state.dayOfMonth} ${state.month} ${state.dayOfWeek}`;
 
@@ -19,6 +21,7 @@ export const withField = (state: CronState, field: keyof CronState, value: strin
 export const unique = (arr: number[]): number[] =>
   [...new Set(arr)].sort((a, b) => a - b);
 
+// Parses "HH:MM" into separate hour/minute strings, validates ranges
 export const parseTime = (time: string): { hour: string; minute: string } => {
   const match = time.match(/^(\d{1,2}):(\d{2})$/);
   if (!match) throw new Error(`Invalid time format: "${time}". Use HH:MM (e.g. "5:07", "14:30").`);

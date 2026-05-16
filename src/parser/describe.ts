@@ -1,5 +1,6 @@
 import { WEEKDAY_NAMES, MONTH_NAMES, expandMacro } from '../utils/constants.js';
 
+// Converts a cron expression (or @ macro) into a human-readable description
 export const describe = (cron: string): string => {
   const expanded = expandMacro(cron);
   const parts = expanded.trim().split(/\s+/);
@@ -8,6 +9,7 @@ export const describe = (cron: string): string => {
 
   const segments: string[] = [];
 
+  // Hour ranges/steps (e.g. "9-17/2") need special handling — can't format as HH:MM
   const hourIsComplex = hour.includes('/') || hour.includes('-');
 
   if (minute.startsWith('*/')) {
@@ -46,6 +48,7 @@ export const describe = (cron: string): string => {
   return segments.length === 0 ? 'every minute' : segments.join(', ');
 };
 
+// Formats simple hour + minute values into "HH:MM" strings, handles lists
 const formatTime = (hour: string, minute: string): string | null => {
   if (hour === '*' && minute === '*') return null;
   if (hour === '*') return `minute ${minute}`;
@@ -66,6 +69,7 @@ const formatTime = (hour: string, minute: string): string | null => {
   return times.join(', ');
 };
 
+// Translates a list/range/step expression into words using the nameFor lookup
 const describeList = (expr: string, nameFor: (v: number) => string): string => {
   if (expr.includes('/')) {
     const [range, step] = expr.split('/');

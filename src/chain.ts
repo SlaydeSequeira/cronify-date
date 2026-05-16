@@ -12,6 +12,7 @@ import {
   applyBetweenDaysOfWeek,
 } from './methods/between.js';
 
+// Wraps pure state-transform functions into a fluent chainable API via closures
 export const createChain = (state: CronState): CronChain => ({
   at: (time) => createChain(applyAt(state, time)),
   on: (...days) => createChain(applyOn(state, ...days)),
@@ -19,6 +20,7 @@ export const createChain = (state: CronState): CronChain => ({
   inMonth: (...months) => createChain(applyInMonth(state, ...months)),
   times: (...timeList) => createChain(applyTimes(state, ...timeList)),
   between: (start, end) => createRangeChain(state, start, end),
+  // Only supports hour-level ranges — minute-precision ranges can't be a single cron expression
   betweenTimes: (start, end) => {
     const s = parseTime(start);
     const e = parseTime(end);
@@ -34,6 +36,7 @@ export const createChain = (state: CronState): CronChain => ({
   toString: () => toCron(state),
 });
 
+// Intermediate step: user picks which field the range applies to, with optional step
 const createRangeChain = (state: CronState, start: number, end: number): RangeChain => ({
   hours: (step?) => createChain(applyBetweenHours(state, start, end, step)),
   minutes: (step?) => createChain(applyBetweenMinutes(state, start, end, step)),

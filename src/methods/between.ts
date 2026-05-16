@@ -1,5 +1,6 @@
 import type { CronState } from '../types.js';
 
+// Builds "start-end" or "start-end/step" range syntax
 const rangeExpr = (start: number, end: number, step?: number): string =>
   step ? `${start}-${end}/${step}` : `${start}-${end}`;
 

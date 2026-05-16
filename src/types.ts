@@ -1,3 +1,4 @@
+// Immutable representation of the 5 cron fields: minute hour dom month dow
 export type CronState = {
   readonly minute: string;
   readonly hour: string;
@@ -6,6 +7,7 @@ export type CronState = {
   readonly dayOfWeek: string;
 };
 
+// Fluent API — each method returns a new CronChain (immutable chaining)
 export type CronChain = {
   readonly at: (time: string) => CronChain;
   readonly on: (...days: (string | number)[]) => CronChain;
@@ -18,6 +20,7 @@ export type CronChain = {
   readonly toString: () => string;
 };
 
+// Intermediate returned by between() — pick a field, then resume chaining
 export type RangeChain = {
   readonly hours: (step?: number) => CronChain;
   readonly minutes: (step?: number) => CronChain;

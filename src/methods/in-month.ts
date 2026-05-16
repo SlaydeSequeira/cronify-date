@@ -2,6 +2,7 @@ import type { CronState } from '../types.js';
 import { MONTHS } from '../utils/constants.js';
 import { unique } from '../utils/helpers.js';
 
+// Accepts month names ("jan", "march") or numbers (1-12), sets the month field
 export const applyInMonth = (state: CronState, ...months: (string | number)[]): CronState => {
   const nums: number[] = [];
 

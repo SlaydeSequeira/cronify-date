@@ -1,6 +1,8 @@
 import type { CronState } from '../types.js';
 import { parseTime, unique } from '../utils/helpers.js';
 
+// Sets multiple specific run times. Throws if both hours and minutes differ
+// across entries — cron cross-products the fields, producing more runs than intended.
 export const applyTimes = (state: CronState, ...timeList: string[]): CronState => {
   if (timeList.length === 0) throw new Error('At least one time is required.');
 

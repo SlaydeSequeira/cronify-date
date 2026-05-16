@@ -1,5 +1,6 @@
 import { expandMacro, CRON_MACROS } from '../utils/constants.js';
 
+// Returns true if the expression is a valid 5-field cron or known @ macro
 export const isValid = (cron: string): boolean => {
   try {
     validate(cron);
@@ -9,6 +10,7 @@ export const isValid = (cron: string): boolean => {
   }
 };
 
+// Throws a descriptive error if the cron expression is invalid
 export const validate = (cron: string): void => {
   const expanded = expandMacro(cron);
   const parts = expanded.trim().split(/\s+/);
@@ -20,6 +22,7 @@ export const validate = (cron: string): void => {
   validateField(parts[4], 0, 7, 'day of week');
 };
 
+// Validates a single cron field — handles lists (,), ranges (-), and steps (/)
 const validateField = (value: string, min: number, max: number, name: string): void => {
   if (value === '*') return;
 

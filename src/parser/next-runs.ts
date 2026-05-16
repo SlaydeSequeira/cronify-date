@@ -1,6 +1,7 @@
 import { validate } from './validate.js';
 import { expandMacro } from '../utils/constants.js';
 
+// Brute-force scans forward minute-by-minute to find the next N matching dates
 export const nextRuns = (cron: string, count: number = 5, from: Date = new Date()): Date[] => {
   validate(cron);
   const expanded = expandMacro(cron);
@@ -11,7 +12,7 @@ export const nextRuns = (cron: string, count: number = 5, from: Date = new Date(
   current.setSeconds(0, 0);
   current.setMinutes(current.getMinutes() + 1);
 
-  const maxIterations = 525600;
+  const maxIterations = 525600; // 1 year of minutes
   for (let i = 0; i < maxIterations && results.length < count; i++) {
     if (matcher(current)) {
       results.push(new Date(current));
@@ -22,6 +23,7 @@ export const nextRuns = (cron: string, count: number = 5, from: Date = new Date(
   return results;
 };
 
+// Pre-computes Sets for each field so matching is O(1) per field per minute
 const buildMatcher = (parts: string[]): (d: Date) => boolean => {
   const [minExpr, hourExpr, domExpr, monthExpr, dowExpr] = parts;
   const minSet = expandField(minExpr, 0, 59);
@@ -36,10 +38,11 @@ const buildMatcher = (parts: string[]): (d: Date) => boolean => {
       && hourSet.has(d.getHours())
       && domSet.has(d.getDate())
       && monthSet.has(d.getMonth() + 1)
-      && (dowSet.has(dow) || dowSet.has(dow + 7));
+      && (dowSet.has(dow) || dowSet.has(dow + 7)); // dow+7 handles cron's 0 and 7 both meaning Sunday
   };
 };
 
+// Expands a cron field expression into the full set of matching values
 const expandField = (expr: string, min: number, max: number): Set<number> => {
   const result = new Set<number>();
 

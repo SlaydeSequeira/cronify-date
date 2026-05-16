@@ -10,6 +10,7 @@ import { describe } from './parser/describe.js';
 import { isValid, validate } from './parser/validate.js';
 import { nextRuns } from './parser/next-runs.js';
 
+// Entry-point functions — each starts a fresh chain from DEFAULT_STATE
 const every = (value: string | number, unit?: string): CronChain =>
   createChain(applyEvery(value, unit));
 

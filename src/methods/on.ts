@@ -2,9 +2,11 @@ import type { CronState } from '../types.js';
 import { WEEKDAYS, DAY_GROUPS } from '../utils/constants.js';
 import { unique } from '../utils/helpers.js';
 
+// Accepts weekday names ("mon", "weekdays"), or day-of-month numbers (1-31).
+// Mixing both types in one call throws — cron uses separate fields for each.
 export const applyOn = (state: CronState, ...days: (string | number)[]): CronState => {
-  const nums: number[] = [];
-  const weekDays: number[] = [];
+  const nums: number[] = [];       // day-of-month values
+  const weekDays: number[] = [];   // day-of-week values
   let usedGroup = false;
 
   for (const day of days) {
@@ -38,6 +40,7 @@ export const applyOn = (state: CronState, ...days: (string | number)[]): CronSta
     const sorted = unique(weekDays);
     let dayOfWeek: string;
 
+    // Collapse contiguous groups like "weekdays" into a range (1-5) instead of a list
     if (usedGroup && sorted.length > 2) {
       const isContiguous = sorted.every((v, i) => i === 0 || v === sorted[i - 1] + 1);
       dayOfWeek = isContiguous ? `${sorted[0]}-${sorted[sorted.length - 1]}` : sorted.join(',');
