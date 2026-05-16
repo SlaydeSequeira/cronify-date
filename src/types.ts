@@ -1,0 +1,27 @@
+export type CronState = {
+  readonly minute: string;
+  readonly hour: string;
+  readonly dayOfMonth: string;
+  readonly month: string;
+  readonly dayOfWeek: string;
+};
+
+export type CronChain = {
+  readonly at: (time: string) => CronChain;
+  readonly on: (...days: (string | number)[]) => CronChain;
+  readonly onDay: (...days: number[]) => CronChain;
+  readonly inMonth: (...months: (string | number)[]) => CronChain;
+  readonly times: (...timeList: string[]) => CronChain;
+  readonly between: (start: number, end: number) => RangeChain;
+  readonly betweenTimes: (start: string, end: string) => CronChain;
+  readonly toCron: () => string;
+  readonly toString: () => string;
+};
+
+export type RangeChain = {
+  readonly hours: () => CronChain;
+  readonly minutes: () => CronChain;
+  readonly daysOfMonth: () => CronChain;
+  readonly months: () => CronChain;
+  readonly daysOfWeek: () => CronChain;
+};

@@ -27,3 +27,7 @@ export const DAY_GROUPS: Record<string, number[]> = {
   weekdays: [1, 2, 3, 4, 5],
   weekends: [0, 6],
 };
+
+export const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+export const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

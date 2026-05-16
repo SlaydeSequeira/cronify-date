@@ -1,89 +1,36 @@
-import { CronBuilder } from './builder.js';
-import { describe, isValid, validate, nextRuns } from './parser.js';
+import type { CronChain, RangeChain } from './types.js';
+import { DEFAULT_STATE } from './utils/helpers.js';
+import { createChain } from './chain.js';
+import { applyEvery } from './methods/every.js';
+import { applyAt } from './methods/at.js';
+import { applyOn } from './methods/on.js';
+import { applyInMonth } from './methods/in-month.js';
+import { applyTimes } from './methods/times.js';
+import { describe } from './parser/describe.js';
+import { isValid, validate } from './parser/validate.js';
+import { nextRuns } from './parser/next-runs.js';
 
-function every(value: string | number, unit?: string): CronBuilder {
-  const builder = new CronBuilder();
+const every = (value: string | number, unit?: string): CronChain =>
+  createChain(applyEvery(value, unit));
 
-  if (typeof value === 'number' && unit) {
-    return applyInterval(builder, value, unit);
-  }
+const at = (time: string): CronChain =>
+  createChain(applyAt(DEFAULT_STATE, time));
 
-  if (typeof value === 'string') {
-    const match = value.match(/^(\d+)\s*(m|min|mins|minutes?|h|hr|hrs|hours?|d|days?)$/i);
-    if (match) {
-      return applyInterval(builder, Number(match[1]), match[2]);
-    }
+const on = (...days: (string | number)[]): CronChain =>
+  createChain(applyOn(DEFAULT_STATE, ...days));
 
-    const lower = value.toLowerCase();
-    if (lower === 'minute') return builder;
-    if (lower === 'hour') { builder.setMinute('0'); builder.setHour('*'); return builder; }
-    if (lower === 'day' || lower === 'daily') { builder.setMinute('0'); builder.setHour('0'); return builder; }
-    if (lower === 'week' || lower === 'weekly') { builder.setMinute('0'); builder.setHour('0'); builder.setDayOfWeek('0'); return builder; }
-    if (lower === 'month' || lower === 'monthly') { builder.setMinute('0'); builder.setHour('0'); builder.setDayOfMonth('1'); return builder; }
-    if (lower === 'year' || lower === 'yearly' || lower === 'annually') { builder.setMinute('0'); builder.setHour('0'); builder.setDayOfMonth('1'); builder.setMonth('1'); return builder; }
+const inMonth = (...months: (string | number)[]): CronChain =>
+  createChain(applyInMonth(DEFAULT_STATE, ...months));
 
-    throw new Error(`Cannot parse interval: "${value}". Use formats like "5m", "2h", "day", "month", etc.`);
-  }
+const times = (...timeList: string[]): CronChain =>
+  createChain(applyTimes(DEFAULT_STATE, ...timeList));
 
-  throw new Error(`Invalid interval: ${value}`);
-}
+const between = (start: number, end: number): RangeChain =>
+  createChain(DEFAULT_STATE).between(start, end);
 
-function applyInterval(builder: CronBuilder, amount: number, unit: string): CronBuilder {
-  const u = unit.toLowerCase().replace(/s$/, '');
-  switch (u) {
-    case 'm': case 'min': case 'minute':
-      if (amount < 1 || amount > 59) throw new Error('Minute interval must be 1-59.');
-      builder.setMinute(`*/${amount}`);
-      return builder;
-    case 'h': case 'hr': case 'hour':
-      if (amount < 1 || amount > 23) throw new Error('Hour interval must be 1-23.');
-      builder.setMinute('0');
-      builder.setHour(`*/${amount}`);
-      return builder;
-    case 'd': case 'day':
-      if (amount < 1 || amount > 31) throw new Error('Day interval must be 1-31.');
-      builder.setMinute('0');
-      builder.setHour('0');
-      builder.setDayOfMonth(`*/${amount}`);
-      return builder;
-    default:
-      throw new Error(`Unknown unit: "${unit}". Use m/h/d (minutes/hours/days).`);
-  }
-}
+const cronify = { every, at, on, inMonth, times, between, describe, isValid, validate, nextRuns };
 
-function at(time: string): CronBuilder {
-  return new CronBuilder().at(time);
-}
-
-function on(...days: (string | number)[]): CronBuilder {
-  return new CronBuilder().on(...days);
-}
-
-function inMonth(...months: (string | number)[]): CronBuilder {
-  return new CronBuilder().inMonth(...months);
-}
-
-function times(...timeList: string[]): CronBuilder {
-  return new CronBuilder().times(...timeList);
-}
-
-function between(start: number, end: number) {
-  return new CronBuilder().between(start, end);
-}
-
-const cronify = {
-  every,
-  at,
-  on,
-  inMonth,
-  times,
-  between,
-  describe,
-  isValid,
-  validate,
-  nextRuns,
-};
-
-export { cronify, CronBuilder };
-export { describe, isValid, validate, nextRuns } from './parser.js';
+export { cronify };
+export type { CronChain, RangeChain, CronState } from './types.js';
+export { describe, isValid, validate, nextRuns };
 export default cronify;
