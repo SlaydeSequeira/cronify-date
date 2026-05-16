@@ -8,3 +8,7 @@ import './unit/describe.test.js';
 import './unit/validate.test.js';
 import './unit/nextRuns.test.js';
 import './unit/chain.test.js';
+import './unit/timezone.test.js';
+import './unit/except.test.js';
+import './unit/union.test.js';
+import './unit/presets.test.js';

@@ -16,22 +16,21 @@ const { cronify } = require('cronify-date');
 import { cronify } from 'cronify-date';
 
 // Every 5 minutes
-cronify.every('5m').toCron();          // "*/5 * * * *"
+cronify.every('5m').toCron();                         // "*/5 * * * *"
 
 // Daily at 5:07 AM
-cronify.every('day').at('5:07').toCron(); // "7 5 * * *"
+cronify.every('day').at('5:07').toCron();              // "7 5 * * *"
 
 // Monthly on the 31st at 5:07 AM
-cronify.every('month').on(31).at('5:07').toCron(); // "7 5 31 * *"
+cronify.every('month').on(31).at('5:07').toCron();    // "7 5 31 * *"
 
-// Weekdays at 9 AM
-cronify.on('weekdays').at('9:00').toCron(); // "0 9 * * 1-5"
+// Weekdays at 9 AM, New York timezone
+cronify.weekdays().at('9:00').tz('America/New_York').toObject();
+// { expression: "0 9 * * 1-5", timezone: "America/New_York" }
 
-// Quarterly via step
-cronify.every('3M').toCron();          // "0 0 1 */3 *"
-
-// Every 2 hours between 9-17
-cronify.between(9, 17).hours(2).at('0:00').toCron(); // "0 9-17/2 * * *"
+// Use presets for common patterns
+cronify.businessHours().toCron();                     // "* 9-17 * * 1-5"
+cronify.quarterly().at('6:00').toCron();              // "0 6 1 1,4,7,10 *"
 ```
 
 ## API
@@ -141,7 +140,7 @@ Chain with `.on()` or `.inMonth()`:
 cronify.times('9:00', '17:00').on('weekdays')  // 0 9,17 * * 1-5
 ```
 
-> **Note:** `times()` throws an error if both hours and minutes differ across the list (e.g. `times('9:30', '17:45')`), because 5-field cron would produce a cross-product (4 runs instead of 2). Use separate cron expressions for those cases.
+> **Note:** `times()` throws an error if both hours and minutes differ across the list (e.g. `times('9:30', '17:45')`), because 5-field cron would produce a cross-product (4 runs instead of 2). Use `union()` for those cases.
 
 ---
 
@@ -177,6 +176,134 @@ cronify.between(1, 12).months(3)                  // * * * 1-12/3 *
 
 ---
 
+### `.tz(timezone)`
+
+Attach an IANA timezone to a chain. Does not change the cron string — affects `toObject()` and `nextRuns()`.
+
+```js
+// Timezone in structured output
+cronify.at('9:00').tz('America/New_York').toObject();
+// { expression: "0 9 * * *", timezone: "America/New_York" }
+
+// Timezone-aware next runs
+cronify.at('9:00').tz('Asia/Tokyo').nextRuns(3);
+// Next 3 dates when it's 9:00 in Tokyo
+
+// Chaining — timezone is preserved through all methods
+cronify.weekdays().at('9:00').tz('Europe/London').exceptDays('fri').toObject();
+// { expression: "0 9 * * 1,2,3,4", timezone: "Europe/London" }
+```
+
+Throws on invalid timezone names:
+
+```js
+cronify.at('9:00').tz('Not/A/Zone');
+// throws: 'Invalid timezone: "Not/A/Zone"...'
+```
+
+---
+
+### `.exceptDays(...days)` / `.exceptMonths(...months)`
+
+Remove specific days or months from a schedule. Subtracts from the current field — if the field is `*`, starts with all values.
+
+```js
+// Exclude weekends from daily schedule
+cronify.at('9:00').exceptDays('weekends')       // 0 9 * * 1,2,3,4,5
+
+// Exclude specific days from a range
+cronify.weekdays().at('9:00').exceptDays('wed') // 0 9 * * 1,2,4,5
+
+// Exclude summer months
+cronify.at('9:00').exceptMonths('jun', 'jul', 'aug')
+// 0 9 * 1,2,3,4,5,9,10,11,12 *
+
+// Exclude from an existing list
+cronify.quarterly().exceptMonths('jul')         // 0 0 1 1,4,10 *
+```
+
+---
+
+### `cronify.union(...chains)`
+
+Combine multiple schedules into an array of cron strings. Use when a single expression can't cover your schedule.
+
+```js
+const crons = cronify.union(
+  cronify.on('monday').at('9:00'),
+  cronify.on('friday').at('17:00'),
+);
+// ["0 9 * * 1", "0 17 * * 5"]
+
+// Solves the cross-product problem with times()
+const crons = cronify.union(
+  cronify.at('9:30'),
+  cronify.at('17:45'),
+);
+// ["30 9 * * *", "45 17 * * *"]
+```
+
+### `cronify.nextRunsUnion(crons, count?, from?)`
+
+Get the next N run dates across multiple cron expressions, merged and sorted.
+
+```js
+const runs = cronify.nextRunsUnion(
+  ['0 9 * * *', '0 17 * * *'],
+  4,
+);
+// Next 4 dates across both schedules, interleaved chronologically
+
+// With timezone
+const runs = cronify.nextRunsUnion(
+  ['0 9 * * *', '0 17 * * *'],
+  4,
+  { from: new Date(), timezone: 'UTC' },
+);
+```
+
+---
+
+### Presets
+
+Shortcut methods for common scheduling patterns. All return a chainable `CronChain`.
+
+```js
+// Time-of-day
+cronify.midnight()        // 0 0 * * *
+cronify.noon()            // 0 12 * * *
+
+// Frequency
+cronify.hourly()          // 0 * * * *
+cronify.daily()           // 0 0 * * *
+cronify.weekly()          // 0 0 * * 0
+cronify.monthly()         // 0 0 1 * *
+cronify.yearly()          // 0 0 1 1 *
+cronify.quarterly()       // 0 0 1 1,4,7,10 *
+
+// Day groups (chain with .at() to set time)
+cronify.weekdays()        // * * * * 1-5
+cronify.weekends()        // * * * * 0,6
+
+// Common patterns
+cronify.startOfMonth()    // 0 0 1 * *
+cronify.endOfDay()        // 59 23 * * *
+cronify.businessHours()   // * 9-17 * * 1-5
+```
+
+All presets are chainable:
+
+```js
+cronify.midnight().on('weekdays')                 // 0 0 * * 1-5
+cronify.quarterly().at('6:00')                    // 0 6 1 1,4,7,10 *
+cronify.businessHours().at('0:30')                // 30 9-17 * * 1-5
+cronify.weekdays().at('9:00').tz('America/Chicago').toObject()
+// { expression: "0 9 * * 1-5", timezone: "America/Chicago" }
+cronify.weekdays().at('9:00').exceptDays('wed')   // 0 9 * * 1,2,4,5
+```
+
+---
+
 ### `cronify.describe(cron)`
 
 Convert a cron expression to a human-readable string. Supports `@yearly`, `@monthly`, `@weekly`, `@daily`, `@hourly` macros.
@@ -192,93 +319,80 @@ cronify.describe('@yearly')         // "at 00:00, on day 1 of the month, in Janu
 
 ---
 
-### `cronify.isValid(cron)`
-
-Check if a cron expression is valid. Returns `true` or `false`. Supports `@` macros.
+### `cronify.isValid(cron)` / `cronify.validate(cron)`
 
 ```js
 cronify.isValid('*/5 * * * *')    // true
 cronify.isValid('0 9-17/2 * * *') // true
 cronify.isValid('@daily')         // true
-cronify.isValid('@hourly')        // true
-cronify.isValid('60 * * * *')     // false (minute max is 59)
-cronify.isValid('* * *')          // false (needs 5 fields)
-cronify.isValid('@reboot')        // false (system-level, no fixed schedule)
-```
+cronify.isValid('60 * * * *')     // false
 
----
-
-### `cronify.validate(cron)`
-
-Like `isValid()` but throws a descriptive error instead of returning `false`.
-
-```js
 cronify.validate('60 * * * *');
 // throws: "minute value 60 out of range (0-59)"
-
-cronify.validate('@reboot');
-// throws: "@reboot is a system-level directive with no fixed schedule..."
 ```
 
 ---
 
-### `cronify.nextRuns(cron, count?, from?)`
+### `cronify.nextRuns(cron, count?, fromOrOptions?)`
 
-Get the next N run dates for a cron expression. Supports `@` macros.
+Get the next N run dates for a cron expression. Supports `@` macros and timezone.
 
 ```js
-const runs = cronify.nextRuns('0 9 * * *', 3);
-// [Date(next 9AM), Date(following 9AM), Date(third 9AM)]
+cronify.nextRuns('0 9 * * *', 3);
+// Next 3 occurrences of 9 AM (local time)
 
 // From a specific start date
-const from = new Date('2025-06-01T00:00:00');
-const runs = cronify.nextRuns('0 9 * * 1', 5, from);
+cronify.nextRuns('0 9 * * 1', 5, new Date('2025-06-01'));
 // Next 5 Mondays at 9 AM after June 1, 2025
 
-// With @ macros
-cronify.nextRuns('@daily', 3);
-// Next 3 midnights
+// With timezone
+cronify.nextRuns('0 9 * * *', 3, { from: new Date(), timezone: 'Asia/Tokyo' });
+// Next 3 occurrences of 9 AM Tokyo time
+```
+
+Or use `.nextRuns()` directly on a chain:
+
+```js
+cronify.weekdays().at('9:00').tz('UTC').nextRuns(5);
+// Next 5 weekday 9 AM UTC dates
 ```
 
 ---
 
 ## Chaining Examples
 
-Build complex schedules by chaining methods:
-
 ```js
 // Quarterly report: 1st of Jan, Apr, Jul, Oct at 6 AM
-cronify.inMonth(1, 4, 7, 10).on(1).at('6:00')
-// "0 6 1 1,4,7,10 *"
+cronify.inMonth(1, 4, 7, 10).on(1).at('6:00')        // "0 6 1 1,4,7,10 *"
 
 // Weekday mornings in March
-cronify.on('weekdays').inMonth('mar').at('7:45')
-// "45 7 * 3 1-5"
-
-// Bi-monthly payday
-cronify.on(15, 30).at('12:00')
-// "0 12 15,30 * *"
+cronify.on('weekdays').inMonth('mar').at('7:45')       // "45 7 * 3 1-5"
 
 // Every 2 hours on weekends
-cronify.every('2h').on('weekends')
-// "0 */2 * * 0,6"
+cronify.every('2h').on('weekends')                     // "0 */2 * * 0,6"
 
-// Stepped hours on weekdays in Q1
-cronify.between(9, 17).hours(2).at('0:00').on('weekdays').inMonth(1, 2, 3)
-// "0 9-17/2 * 1,2,3 1-5"
+// Business hours except Wednesday, in Tokyo
+cronify.businessHours().exceptDays('wed').tz('Asia/Tokyo').toObject()
+// { expression: "* 9-17 * * 1,2,4,5", timezone: "Asia/Tokyo" }
+
+// Union: different times on different days
+cronify.union(
+  cronify.on('mon', 'wed').at('7:00'),
+  cronify.on('fri').at('15:00'),
+)
+// ["0 7 * * 1,3", "0 15 * * 5"]
 ```
 
 ## Limitations
 
-These are fundamental constraints of 5-field POSIX cron that this library cannot work around:
-
 | Limitation | Why | Workaround |
 |---|---|---|
-| **Cross-product times** | `times('9:30', '17:45')` would need independent hour+minute pairs, but cron cross-products them (4 runs, not 2) | `times()` throws an error — use separate cron expressions |
-| **Minute-precision time ranges** | `betweenTimes('9:30', '17:30')` can't be expressed in one expression | `betweenTimes()` throws on non-zero minutes — use hour-level ranges |
-| **6-field cron (seconds)** | Some schedulers (node-cron, Quartz) use a 6th seconds field | Out of scope — this library targets standard 5-field POSIX cron |
-| **Quartz extensions** | `L` (last day), `W` (nearest weekday), `#` (nth weekday), `?` (unspecified) | Non-POSIX — out of scope |
-| **`@reboot`** | System-level directive with no fixed schedule | `validate()` / `describe()` throw a descriptive error |
+| **Cross-product times** | `times('9:30', '17:45')` would produce 4 runs, not 2 | `times()` throws — use `union()` instead |
+| **Last day of month** | Requires Quartz `L` extension, not available in POSIX cron | Use `on(28, 29, 30, 31)` for an approximation |
+| **Minute-precision ranges** | `betweenTimes('9:30', '17:30')` can't be one expression | `betweenTimes()` throws — use hour-level ranges |
+| **6-field cron (seconds)** | Different spec entirely | Out of scope — targets standard 5-field POSIX cron |
+| **Quartz extensions** | `L`, `W`, `#`, `?` are non-POSIX | Out of scope |
+| **`@reboot`** | System-level directive, no fixed schedule | `validate()` throws a descriptive error |
 
 ## Cron Field Reference
 

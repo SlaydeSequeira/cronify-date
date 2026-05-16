@@ -1,9 +1,10 @@
 import type { CronState, CronChain, RangeChain } from './types.js';
-import { toCron, parseTime } from './utils/helpers.js';
+import { toCron, parseTime, validateTimezone } from './utils/helpers.js';
 import { applyAt } from './methods/at.js';
 import { applyOn } from './methods/on.js';
 import { applyInMonth } from './methods/in-month.js';
 import { applyTimes } from './methods/times.js';
+import { applyExceptDays, applyExceptMonths } from './methods/except.js';
 import {
   applyBetweenHours,
   applyBetweenMinutes,
@@ -11,6 +12,7 @@ import {
   applyBetweenMonths,
   applyBetweenDaysOfWeek,
 } from './methods/between.js';
+import { nextRuns } from './parser/next-runs.js';
 
 // Wraps pure state-transform functions into a fluent chainable API via closures
 export const createChain = (state: CronState): CronChain => ({
@@ -20,6 +22,7 @@ export const createChain = (state: CronState): CronChain => ({
   inMonth: (...months) => createChain(applyInMonth(state, ...months)),
   times: (...timeList) => createChain(applyTimes(state, ...timeList)),
   between: (start, end) => createRangeChain(state, start, end),
+
   // Only supports hour-level ranges — minute-precision ranges can't be a single cron expression
   betweenTimes: (start, end) => {
     const s = parseTime(start);
@@ -32,7 +35,33 @@ export const createChain = (state: CronState): CronChain => ({
     }
     return createChain({ ...state, hour: `${s.hour}-${e.hour}` });
   },
+
+  // Attaches a timezone — affects nextRuns() and toObject(), not the cron string itself
+  tz: (timezone) => {
+    validateTimezone(timezone);
+    return createChain({ ...state, timezone });
+  },
+
+  // Removes specific days from the schedule (subtracts from dayOfWeek)
+  exceptDays: (...days) => createChain(applyExceptDays(state, ...days)),
+
+  // Removes specific months from the schedule (subtracts from month)
+  exceptMonths: (...months) => createChain(applyExceptMonths(state, ...months)),
+
   toCron: () => toCron(state),
+
+  // Returns the expression + timezone as a structured object
+  toObject: () => ({
+    expression: toCron(state),
+    ...(state.timezone ? { timezone: state.timezone } : {}),
+  }),
+
+  // Convenience: compute next run dates directly from the chain
+  nextRuns: (count?, from?) => {
+    const opts = state.timezone ? { from, timezone: state.timezone } : { from };
+    return nextRuns(toCron(state), count ?? 5, opts);
+  },
+
   toString: () => toCron(state),
 });
 

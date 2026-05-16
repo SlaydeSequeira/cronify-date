@@ -8,9 +8,14 @@ import { applyInMonth } from './methods/in-month.js';
 import { applyTimes } from './methods/times.js';
 import { describe } from './parser/describe.js';
 import { isValid, validate } from './parser/validate.js';
-import { nextRuns } from './parser/next-runs.js';
+import { nextRuns, nextRunsUnion } from './parser/next-runs.js';
+import {
+  midnight, noon, hourly, daily, weekly, monthly, yearly, quarterly,
+  weekdays, weekends, startOfMonth, endOfDay, businessHours,
+} from './presets.js';
 
-// Entry-point functions — each starts a fresh chain from DEFAULT_STATE
+// ── Entry-point functions — each starts a fresh chain from DEFAULT_STATE ──
+
 const every = (value: string | number, unit?: string): CronChain =>
   createChain(applyEvery(value, unit));
 
@@ -29,9 +34,21 @@ const times = (...timeList: string[]): CronChain =>
 const between = (start: number, end: number): RangeChain =>
   createChain(DEFAULT_STATE).between(start, end);
 
-const cronify = { every, at, on, inMonth, times, between, describe, isValid, validate, nextRuns };
+// Combines multiple chains into an array of cron strings
+const union = (...chains: CronChain[]): string[] =>
+  chains.map(c => c.toCron());
+
+const cronify = {
+  // Builders
+  every, at, on, inMonth, times, between, union,
+  // Parsers
+  describe, isValid, validate, nextRuns, nextRunsUnion,
+  // Presets
+  midnight, noon, hourly, daily, weekly, monthly, yearly, quarterly,
+  weekdays, weekends, startOfMonth, endOfDay, businessHours,
+};
 
 export { cronify };
-export type { CronChain, RangeChain, CronState } from './types.js';
-export { describe, isValid, validate, nextRuns };
+export type { CronChain, RangeChain, CronState, CronExpression, NextRunsOptions } from './types.js';
+export { describe, isValid, validate, nextRuns, nextRunsUnion };
 export default cronify;
