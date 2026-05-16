@@ -12,3 +12,7 @@ import './unit/timezone.test.js';
 import './unit/except.test.js';
 import './unit/union.test.js';
 import './unit/presets.test.js';
+import './integration/chaining.test.js';
+import './integration/real-world.test.js';
+import './integration/round-trip.test.js';
+import './integration/edge-cases.test.js';
